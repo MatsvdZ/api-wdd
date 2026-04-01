@@ -1,4 +1,10 @@
 ---
+console.log("what")
+const url = "https://bored-api.appbrewery.com/random";
+const response = await fetch(url);
+const bored = await response.json();
+ 
+console.log(bored);
 
 ---
 
@@ -13,5 +19,14 @@
 	</head>
 	<body>
 		<h1>Astro</h1>
+			<p>wij hebben {bored.activity} todos voor jou</p> 
+			<ul>
+
+			</ul>
+
+		<script>
+			const h1 = document.querySelector("h1");
+			console.log(h1);
+		</script>	
 	</body>
 </html>
