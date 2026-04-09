@@ -105,7 +105,7 @@ function draw() {
   );
 
   // Zon tekenen
- const sunRadiusScaled = scaleRadius(696340);
+  const sunRadiusScaled = scaleRadius(696340);
 
   ctx.fillStyle = "yellow";
   ctx.beginPath();
@@ -116,6 +116,7 @@ function draw() {
   const orbitRadius = scaleDistance(planet.distance);
   const planetRadius = scaleRadius(planet.radius);
 
+  // Orbit tekenen
   ctx.strokeStyle = "rgba(255,255,255,0.18)";
   ctx.lineWidth = 1 / zoom;
   ctx.beginPath();
@@ -125,11 +126,13 @@ function draw() {
   const planetWorldX = worldCenterX + Math.cos(planet.angle) * orbitRadius;
   const planetWorldY = worldCenterY + Math.sin(planet.angle) * orbitRadius;
 
+  // Planeet tekenen
   ctx.fillStyle = "white";
   ctx.beginPath();
   ctx.arc(planetWorldX, planetWorldY, planetRadius, 0, Math.PI * 2);
   ctx.fill();
 
+  // Planeetnaam tekenen
   ctx.fillStyle = "white";
   ctx.font = `${16 / zoom}px Arial`;
   ctx.fillText(
