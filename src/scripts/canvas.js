@@ -1,43 +1,54 @@
-// @ts-nocheck
+// @ts-nocheck// @ts-nocheck
 import { loadPlanetAngles, savePlanetAngles } from "./localstorage.js";
 
 const canvas = document.getElementById("solar-system");
 const ctx = canvas.getContext("2d");
 
-// Planeten data, van de server-side variabele die ik in index.astro heb gezet
+// Planeten data uit Astro
 const planets = window.planets || [];
 
+// Textures
+const textures = {};
+
 // Camera parameters
-// Bron: camera movement via https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations#moving-the-canvas-camera
 let cameraX = 0;
 let cameraY = 0;
 let zoom = 1;
 
+// Wereldcentrum
 const worldCenterX = window.innerWidth / 2;
 const worldCenterY = window.innerHeight / 2;
 
-const distances = planets.map((p) => p.distance);
-const radii = planets.map((p) => p.radius);
-// Voor nu even een vaste waarde voor de zon voor een referentie. In de toekomst deze ook uit de API halen.
+// Muispositie
+let mouseX = 0;
+let mouseY = 0;
+
+// Hovered planeet
+let hoveredPlanet = null;
+
+// Zonradius
 const sunRadius = 696340; // km
 
-// Bron: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math
+// Data voor scaling
+const distances = planets.map((p) => p.distance);
+const radii = planets.map((p) => p.radius);
+
 const minDistance = Math.min(...distances);
 const maxDistance = Math.max(...distances);
+
 const allRadii = [...radii, sunRadius];
 const minRadius = Math.min(...radii);
 const maxRadius = Math.max(...allRadii);
 
-// Opgeslagen hoeken laden, of default hoeken berekenen op basis van de index
+// Opgeslagen hoeken laden
 const savedAngles = loadPlanetAngles();
 
+// Planeten uitbreiden met beginhoek
 const animatedPlanets = planets.map((planet, index) => ({
   ...planet,
-  angle:
-    savedAngles[planet.name] ?? (index / planets.length) * Math.PI * 2,
+  angle: savedAngles[planet.name] ?? (index / planets.length) * Math.PI * 2,
 }));
 
-// Canvas op volledige schermgrootte zetten
 function resizeCanvas() {
   const scale = window.devicePixelRatio || 1;
 
@@ -48,13 +59,12 @@ function resizeCanvas() {
   canvas.style.height = `${window.innerHeight}px`;
 }
 
-// Camera centreren op de zon
 function centerOnSun() {
   cameraX = worldCenterX - window.innerWidth / 2;
   cameraY = worldCenterY - window.innerHeight / 2;
 }
 
-// Logaritmische schaal voor afstanden, zodat Mercurius en Neptunus iets beter zichtbaar zijn
+// Logaritmische afstandsschaal
 function scaleDistance(distance) {
   const minOrbit = 120;
   const maxOrbit = 2200;
@@ -66,7 +76,7 @@ function scaleDistance(distance) {
   return minOrbit + t * (maxOrbit - minOrbit);
 }
 
-// Logaritmische schaal voor planeten, zodat ook kleine planeten zichtbaar zijn
+// Wortelschaal voor groottes
 function scaleRadius(radius) {
   const minPlanetPx = 3;
   const maxPlanetPx = 30;
@@ -78,23 +88,74 @@ function scaleRadius(radius) {
   return minPlanetPx + t * (maxPlanetPx - minPlanetPx);
 }
 
-// Zwarte achtergrond tekenen
 function drawBackground() {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
 }
 
-// Alle planeten tekenen
+function loadTextures(planetsToLoad) {
+  planetsToLoad.forEach((planet) => {
+    if (!planet.texture) return;
+
+    const img = new Image();
+    img.src = planet.texture;
+
+    img.onload = () => {
+      draw();
+    };
+
+    textures[planet.name] = img;
+  });
+}
+
+function drawPlanetTexture(img, x, y, radius) {
+  ctx.save();
+
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
+
+  ctx.restore();
+}
+
+function addPlanetShading(x, y, radius) {
+  const gradient = ctx.createRadialGradient(
+    x - radius * 0.3,
+    y - radius * 0.3,
+    radius * 0.2,
+    x,
+    y,
+    radius
+  );
+
+  gradient.addColorStop(0, "rgba(255,255,255,0.2)");
+  gradient.addColorStop(0.6, "rgba(0,0,0,0)");
+  gradient.addColorStop(1, "rgba(0,0,0,0.4)");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function updatePlanets() {
+  animatedPlanets.forEach((planet) => {
+    const speed = 1 / planet.orbitTime;
+    planet.angle += speed * 0.1;
+  });
+}
+
 function draw() {
   const dpr = window.devicePixelRatio || 1;
 
-  // reset
+  // Reset en achtergrond tekenen
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
   drawBackground();
 
-  // juiste world transform:
-  // screen = (world - camera) * zoom
+  // Wereldtransformatie
   ctx.setTransform(
     dpr * zoom,
     0,
@@ -105,57 +166,90 @@ function draw() {
   );
 
   // Zon tekenen
-  const sunRadiusScaled = scaleRadius(696340);
+  const sunRadiusScaled = Math.min(scaleRadius(sunRadius), 70);
 
   ctx.fillStyle = "yellow";
   ctx.beginPath();
   ctx.arc(worldCenterX, worldCenterY, sunRadiusScaled, 0, Math.PI * 2);
   ctx.fill();
 
+  // Muispositie omzetten naar wereldpositie
+  const worldMouseX = cameraX + mouseX / zoom;
+  const worldMouseY = cameraY + mouseY / zoom;
+
+  hoveredPlanet = null;
+
   animatedPlanets.forEach((planet) => {
-  const orbitRadius = scaleDistance(planet.distance);
-  const planetRadius = scaleRadius(planet.radius);
+    const orbitRadius = scaleDistance(planet.distance);
+    const planetRadius = scaleRadius(planet.radius);
 
-  // Orbit tekenen
-  ctx.strokeStyle = "rgba(255,255,255,0.18)";
-  ctx.lineWidth = 1 / zoom;
-  ctx.beginPath();
-  ctx.arc(worldCenterX, worldCenterY, orbitRadius, 0, Math.PI * 2);
-  ctx.stroke();
+    // Orbit tekenen
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1 / zoom;
+    ctx.beginPath();
+    ctx.arc(worldCenterX, worldCenterY, orbitRadius, 0, Math.PI * 2);
+    ctx.stroke();
 
-  const planetWorldX = worldCenterX + Math.cos(planet.angle) * orbitRadius;
-  const planetWorldY = worldCenterY + Math.sin(planet.angle) * orbitRadius;
+    // Planeetpositie
+    const planetWorldX = worldCenterX + Math.cos(planet.angle) * orbitRadius;
+    const planetWorldY = worldCenterY + Math.sin(planet.angle) * orbitRadius;
 
-  // Planeet tekenen
-  ctx.fillStyle = "white";
-  ctx.beginPath();
-  ctx.arc(planetWorldX, planetWorldY, planetRadius, 0, Math.PI * 2);
-  ctx.fill();
+    // Hover detectie
+    const dx = worldMouseX - planetWorldX;
+    const dy = worldMouseY - planetWorldY;
+    const distanceToMouse = Math.sqrt(dx * dx + dy * dy);
+    const isHovered = distanceToMouse < planetRadius;
 
-  // Planeetnaam tekenen
-  ctx.fillStyle = "white";
-  ctx.font = `${16 / zoom}px Arial`;
-  ctx.fillText(
-    planet.name,
-    planetWorldX + 10 / zoom,
-    planetWorldY + 4 / zoom
-  );
+    if (isHovered) {
+      hoveredPlanet = planet;
+    }
+
+    // Texture of fallback cirkel tekenen
+    const img = textures[planet.name];
+
+    if (img && img.complete) {
+      drawPlanetTexture(img, planetWorldX, planetWorldY, planetRadius);
+      addPlanetShading(planetWorldX, planetWorldY, planetRadius);
+    } else {
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(planetWorldX, planetWorldY, planetRadius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Alleen naam tonen bij hover
+    if (isHovered) {
+      ctx.fillStyle = "white";
+      ctx.font = `${16 / zoom}px Arial`;
+      ctx.fillText(
+        planet.name,
+        planetWorldX + 10 / zoom,
+        planetWorldY + 4 / zoom
+      );
+    }
   });
 
-  // Resetten na tekenen, zodat UI elementen niet meebewegen of meezoomen
+  canvas.style.cursor = hoveredPlanet ? "pointer" : "default";
+
+  // Reset transform na tekenen
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-// Hoeken van planeten updaten op basis van hun baansnelheid
-function updatePlanets() {
-  animatedPlanets.forEach((planet) => {
-    const speed = 1 / planet.orbitTime;
-    planet.angle += speed * 0.1;
-  });
-}
+// Muispositie bijhouden
+canvas.addEventListener("mousemove", (event) => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = event.clientX - rect.left;
+  mouseY = event.clientY - rect.top;
+});
 
-// Pijltjestoetsen voor camera beweging
-// Bron: https://developer.mozilla.org/en-US/docs/Web/API/Document/keydown_event
+// Simpele klik: gebruik huidige hoveredPlaneet
+canvas.addEventListener("click", () => {
+  if (hoveredPlanet) {
+    window.location.href = `/planet/${hoveredPlanet.slug}`;
+  }
+});
+
+// Camera bewegen met pijltjestoetsen
 document.addEventListener("keydown", (event) => {
   const speed = 60 / zoom;
 
@@ -163,62 +257,57 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") cameraX -= speed;
   if (event.key === "ArrowDown") cameraY += speed;
   if (event.key === "ArrowUp") cameraY -= speed;
-
-  draw();
 });
 
-// Muiswiel voor zoomen
-// Bron: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
+// Zoomen op muispositie
 canvas.addEventListener(
   "wheel",
   (event) => {
     event.preventDefault();
 
     const rect = canvas.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
+    const mouseCanvasX = event.clientX - rect.left;
+    const mouseCanvasY = event.clientY - rect.top;
 
-    // wereldpositie onder de muis vóór het zoomen
-    const worldX = cameraX + mouseX / zoom;
-    const worldY = cameraY + mouseY / zoom;
+    const worldXBeforeZoom = cameraX + mouseCanvasX / zoom;
+    const worldYBeforeZoom = cameraY + mouseCanvasY / zoom;
 
-    // subtielere zoom
     const zoomFactor = event.deltaY < 0 ? 1.05 : 0.95;
     const newZoom = Math.max(0.2, Math.min(zoom * zoomFactor, 5));
 
     zoom = newZoom;
 
-    // camera zo aanpassen dat hetzelfde wereldpunt onder de muis blijft
-    cameraX = worldX - mouseX / zoom;
-    cameraY = worldY - mouseY / zoom;
-
-    draw();
+    cameraX = worldXBeforeZoom - mouseCanvasX / zoom;
+    cameraY = worldYBeforeZoom - mouseCanvasY / zoom;
   },
   { passive: false }
 );
 
-// Voordat de pagina wordt gesloten, de huidige hoeken van de planeten opslaan
+// Hoeken opslaan bij verlaten
 window.addEventListener("beforeunload", () => {
   savePlanetAngles(animatedPlanets);
 });
 
-// Wanneer het venster wordt aangepast, canvas opnieuw schalen en centreren
+// Periodiek opslaan
+setInterval(() => {
+  savePlanetAngles(animatedPlanets);
+}, 5000);
+
+// Resize
 window.addEventListener("resize", () => {
   resizeCanvas();
   centerOnSun();
   draw();
 });
 
-// Hoeken van planeten updaten, tekenen, en dit continu herhalen
 function animate() {
   updatePlanets();
   draw();
-  // Bron: https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame
   requestAnimationFrame(animate);
 }
 
 // Initialisatie
+loadTextures(animatedPlanets);
 resizeCanvas();
 centerOnSun();
-animate()
-draw();
+animate();
