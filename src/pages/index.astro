@@ -44,6 +44,12 @@ const planets = data.bodies
     <title>Our Solar System</title>
   </head>
   <body>
+    <div class="controls">
+      <label>
+        Speed:
+        <input type="range" id="speed-slider" min="0" max="50" value="10" />
+      </label>
+    </div>
     <canvas id="solar-system"></canvas>
 
     <script define:vars={{ planets }}>

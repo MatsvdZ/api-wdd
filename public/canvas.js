@@ -15,6 +15,8 @@ let cameraX = 0;
 let cameraY = 0;
 let zoom = 1;
 
+let timeScale = 0.01; // Voor het versnellen of vertragen van de animatie
+
 // Wereldcentrum
 const worldCenterX = window.innerWidth / 2;
 const worldCenterY = window.innerHeight / 2;
@@ -50,10 +52,12 @@ const animatedPlanets = planets.map((planet, index) => ({
 }));
 
 function resizeCanvas() {
-  const scale = window.devicePixelRatio || 1;
 
-  canvas.width = window.innerWidth * scale;
-  canvas.height = window.innerHeight * scale;
+  // Bron: https://gist.github.com/callumlocke/cc258a193839691f60dd
+  const ratio = window.devicePixelRatio || 1;
+
+  canvas.width = window.innerWidth * ratio;
+  canvas.height = window.innerHeight * ratio;
 
   canvas.style.width = `${window.innerWidth}px`;
   canvas.style.height = `${window.innerHeight}px`;
@@ -140,10 +144,17 @@ function addPlanetShading(x, y, radius) {
   ctx.fill();
 }
 
+const slider = document.getElementById("speed-slider");
+
+slider.addEventListener("input", (event) => {
+  timeScale = event.target.value / 10;
+});
+
+
 function updatePlanets() {
   animatedPlanets.forEach((planet) => {
     const speed = 1 / planet.orbitTime;
-    planet.angle += speed * 0.1;
+    planet.angle += speed * timeScale;
   });
 }
 
@@ -300,10 +311,15 @@ window.addEventListener("resize", () => {
   draw();
 });
 
+// hulp van ChatGPT bij het opzetten van de animatielus
 function animate() {
+  // Planetenpositie updaten
   updatePlanets();
+  // Tekenen
   draw();
+  // Volgende frame aanvragen
   requestAnimationFrame(animate);
+  console.log("frame");
 }
 
 // Initialisatie

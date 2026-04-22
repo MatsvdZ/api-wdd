@@ -2,7 +2,7 @@
 // @ts-nocheck
 import "../../styles/detail.css";
 
-
+// Bron: https://api.le-systeme-solaire.net/en/
 export async function getStaticPaths() {
   const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
     headers: {
@@ -12,15 +12,13 @@ export async function getStaticPaths() {
 
   const data = await response.json();
 
-  const planets = data.bodies
+  return data.bodies
     .filter((body) => body.isPlanet)
     .map((planet) => ({
       params: {
         name: planet.englishName.toLowerCase(),
       },
     }));
-
-  return planets;
 }
 
 const { name } = Astro.params;
@@ -40,30 +38,84 @@ const planet = data.bodies.find(
 if (!planet) {
   throw new Error("Planet not found");
 }
+
+const textureMap = {
+  Mercury: "/images/planets/mercury.png",
+  Venus: "/images/planets/venus.png",
+  Earth: "/images/planets/earth.png",
+  Mars: "/images/planets/mars.png",
+  Jupiter: "/images/planets/jupiter.png",
+  Saturn: "/images/planets/saturn.png",
+  Uranus: "/images/planets/uranus.png",
+  Neptune: "/images/planets/neptune.png",
+};
+
+const texture = textureMap[planet.englishName];
+const moonCount = planet.moons ? planet.moons.length : 0;
 --- 
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
-    <link rel="stylesheet" href="/styles/detail.css" />
     <title>{planet.englishName}</title>
   </head>
+
   <body>
     <main>
-      <a href="/">← Back to solar system</a>
+      <a class="back-link" href="/">↩ Back to solar system</a>
 
-      <h1>{planet.englishName}</h1>
+      <section class="hero">
+        <div class="planet-image-wrapper">
+          {texture ? (
+            <img class="planet-image" src={texture} alt={planet.englishName} />
+          ) : (
+            <div>{planet.englishName}</div>
+          )}
+        </div>
 
-      <ul>
-        <li><strong>Radius:</strong> {planet.meanRadius} km</li>
-        <li><strong>Gravity:</strong> {planet.gravity} m/s²</li>
-        <li><strong>Distance from Sun:</strong> {planet.semimajorAxis} km</li>
-        <li><strong>Orbital period:</strong> {planet.sideralOrbit} days</li>
-        <li><strong>Rotation period:</strong> {planet.sideralRotation} hours</li>
-        <li><strong>Density:</strong> {planet.density} g/cm³</li>
-        <li><strong>Moons:</strong> {planet.moons ? planet.moons.length : 0}</li>
-      </ul>
+        <div>
+          <h1>{planet.englishName}</h1>
+          <p class="subtitle">
+            Explore key awesome about {planet.englishName}, including its size, gravity,
+            distance from the Sun, orbital period, and more.
+          </p>
+        </div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <p class="label">Mean radius</p>
+          <p class="value">{planet.meanRadius} km</p>
+        </article>
+
+        <article class="card">
+          <p class="label">Gravity</p>
+          <p class="value">{planet.gravity} m/s²</p>
+        </article>
+
+        <article class="card">
+          <p class="label">Distance from Sun</p>
+          <p class="value">{planet.semimajorAxis.toLocaleString()} km</p>
+        </article>
+
+        <article class="card">
+          <p class="label">Moons</p>
+          <p class="value">{moonCount}</p>
+        </article>
+      </section>
+
+      <section class="facts">
+        <h2>Extra facts</h2>
+        <ul>
+          <li>Orbital {planet.sideralOrbit} days</li>
+          <li>Rotation period: {planet.sideralRotation} hours</li>
+          <li>Density: {planet.density} g/cm³</li>
+          <li>Escape velocity: {planet.escape} m/s</li>
+          <li>Axial tilt: {planet.axialTilt}°</li>
+          <li>Average temperature: {planet.avgTemp} K</li>
+        </ul>
+      </section>
     </main>
   </body>
 </html>
