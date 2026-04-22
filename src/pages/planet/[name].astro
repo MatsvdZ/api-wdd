@@ -1,5 +1,8 @@
 --- 
 // @ts-nocheck
+import "../../styles/detail.css";
+
+
 export async function getStaticPaths() {
   const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
     headers: {
