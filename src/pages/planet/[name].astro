@@ -4,24 +4,32 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import "../../styles/detail.css";
 import PlanetInfoCard from "../../components/PlanetInfoCard.astro";
 
-const { name } = Astro.params;
+// 🔥 1. Alle planeten ophalen en routes genereren
+export async function getStaticPaths() {
+  const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
+    headers: {
+      Authorization: `Bearer ${import.meta.env.SOLAR_API_KEY}`,
+    },
+  });
 
-const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
-  headers: {
-    Authorization: `Bearer ${import.meta.env.SOLAR_API_KEY}`,
-  },
-});
+  const data = await response.json();
 
-const data = await response.json();
-
-const planet = data.bodies.find(
-  (body) => body.isPlanet && body.englishName.toLowerCase() === name
-);
-
-if (!planet) {
-  throw new Error("Planet not found");
+  return data.bodies
+    .filter((body) => body.isPlanet)
+    .map((planet) => ({
+      params: {
+        name: planet.englishName.toLowerCase(),
+      },
+      props: {
+        planet, // 👈 stuur hele object door
+      },
+    }));
 }
 
+// 🔥 2. Geen fetch meer nodig!
+const { planet } = Astro.props;
+
+// Texture mapping
 const textureMap = {
   Sun: "/images/planets/sun.png",
   Mercury: "/images/planets/mercury.png",
