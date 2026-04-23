@@ -9,13 +9,15 @@ const planets = window.planets || [];
 
 // Textures
 const textures = {};
+const sunTexture = new Image();
+sunTexture.src = "/images/planets/sun.png";
 
 // Camera parameters
 let cameraX = 0;
 let cameraY = 0;
 let zoom = 1;
 
-let timeScale = 0.01; // Voor het versnellen of vertragen van de animatie
+let timeScale = 0.1; // Voor het versnellen of vertragen van de animatie
 
 // Wereldcentrum
 const worldCenterX = window.innerWidth / 2;
@@ -44,6 +46,8 @@ const maxRadius = Math.max(...allRadii);
 
 // Opgeslagen hoeken laden
 const savedAngles = loadPlanetAngles();
+
+let sunAngle = 0;
 
 // Planeten uitbreiden met beginhoek
 const animatedPlanets = planets.map((planet, index) => ({
@@ -178,9 +182,44 @@ function draw() {
   // Zon tekenen
   const sunRadiusScaled = Math.min(scaleRadius(sunRadius), 70);
 
-  ctx.fillStyle = "yellow";
+  ctx.save();
+
   ctx.beginPath();
   ctx.arc(worldCenterX, worldCenterY, sunRadiusScaled, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.translate(worldCenterX, worldCenterY);
+  ctx.rotate(sunAngle);
+
+  ctx.beginPath();
+  ctx.arc(0, 0, sunRadiusScaled, 0, Math.PI * 2);
+  ctx.clip();
+
+  ctx.drawImage(
+    sunTexture,
+    -sunRadiusScaled,
+    -sunRadiusScaled,
+    sunRadiusScaled * 2,
+    sunRadiusScaled * 2,
+  );
+
+  ctx.restore();
+
+  const glow = ctx.createRadialGradient(
+    worldCenterX,
+    worldCenterY,
+    0,
+    worldCenterX,
+    worldCenterY,
+    sunRadiusScaled * 2,
+  );
+
+  glow.addColorStop(0, "rgba(255,200,0,0.6)");
+  glow.addColorStop(1, "rgba(255,200,0,0)");
+
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(worldCenterX, worldCenterY, sunRadiusScaled * 2, 0, Math.PI * 2);
   ctx.fill();
 
   // Muispositie omzetten naar wereldpositie
@@ -314,6 +353,8 @@ window.addEventListener("resize", () => {
 function animate() {
   // Planetenpositie updaten
   updatePlanets();
+
+  sunAngle += 0.0002;
   // Tekenen
   draw();
   // Volgende frame aanvragen
