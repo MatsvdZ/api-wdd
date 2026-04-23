@@ -1,11 +1,14 @@
-// @ts-nocheck// @ts-nocheck
+// @ts-nocheck
 import { loadPlanetAngles, savePlanetAngles } from "./localstorage.js";
+
+console.log(window.moons);
 
 const canvas = document.getElementById("solar-system");
 const ctx = canvas.getContext("2d");
 
-// Planeten data uit Astro
+// Planeten en manen data uit Astro
 const planets = window.planets || [];
+const moons = window.moons || [];
 
 // Textures
 const textures = {};
@@ -17,7 +20,7 @@ let cameraX = 0;
 let cameraY = 0;
 let zoom = 1;
 
-let timeScale = 0.1; // Voor het versnellen of vertragen van de animatie
+let timeScale = 0.1;
 
 // Wereldcentrum
 const worldCenterX = window.innerWidth / 2;
@@ -49,14 +52,20 @@ const savedAngles = loadPlanetAngles();
 
 let sunAngle = 0;
 
-// Planeten uitbreiden met beginhoek
+// Planeten uitbreiden met beginhoek + eigen rotatiehoek
 const animatedPlanets = planets.map((planet, index) => ({
   ...planet,
   angle: savedAngles[planet.name] ?? (index / planets.length) * Math.PI * 2,
+  rotationAngle: 0,
+}));
+
+// Manen een angle geven
+const animatedMoons = moons.map((moon, index) => ({
+  ...moon,
+  angle: (index / Math.max(moons.length, 1)) * Math.PI * 2,
 }));
 
 function resizeCanvas() {
-  // Bron: https://gist.github.com/callumlocke/cc258a193839691f60dd
   const ratio = window.devicePixelRatio || 1;
 
   canvas.width = window.innerWidth * ratio;
@@ -115,14 +124,17 @@ function loadTextures(planetsToLoad) {
   });
 }
 
-function drawPlanetTexture(img, x, y, radius) {
+function drawPlanetTexture(img, x, y, radius, rotation = 0) {
   ctx.save();
 
+  ctx.translate(x, y);
+  ctx.rotate(rotation);
+
   ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
   ctx.clip();
 
-  ctx.drawImage(img, x - radius, y - radius, radius * 2, radius * 2);
+  ctx.drawImage(img, -radius, -radius, radius * 2, radius * 2);
 
   ctx.restore();
 }
@@ -148,16 +160,31 @@ function addPlanetShading(x, y, radius) {
 }
 
 const slider = document.getElementById("speed-slider");
-console.log(slider);
 
-slider.addEventListener("input", (event) => {
-  timeScale = event.target.value;
-});
+if (slider) {
+  slider.addEventListener("input", (event) => {
+    timeScale = Number(event.target.value);
+  });
+}
 
 function updatePlanets() {
   animatedPlanets.forEach((planet) => {
-    const speed = 0.1 / planet.orbitTime;
-    planet.angle += speed * timeScale;
+    // Orbit rond de zon
+    const orbitSpeed = 0.1 / planet.orbitTime;
+    planet.angle += orbitSpeed * timeScale;
+
+    // Rotatie om eigen as
+    if (planet.sideralRotation) {
+      const rotationSpeed = 1 / Math.abs(planet.sideralRotation);
+      const direction = planet.sideralRotation < 0 ? -1 : 1;
+
+      planet.rotationAngle += rotationSpeed * direction * timeScale * 0.5;
+    }
+  });
+
+  animatedMoons.forEach((moon) => {
+    const speed = 0.2 / moon.orbitTime;
+    moon.angle += speed * timeScale;
   });
 }
 
@@ -183,7 +210,6 @@ function draw() {
   const sunRadiusScaled = Math.min(scaleRadius(sunRadius), 70);
 
   ctx.save();
-
   ctx.beginPath();
   ctx.arc(worldCenterX, worldCenterY, sunRadiusScaled, 0, Math.PI * 2);
   ctx.clip();
@@ -202,7 +228,6 @@ function draw() {
     sunRadiusScaled * 2,
     sunRadiusScaled * 2,
   );
-
   ctx.restore();
 
   const glow = ctx.createRadialGradient(
@@ -228,6 +253,11 @@ function draw() {
 
   hoveredPlanet = null;
 
+  let earthX = null;
+  let earthY = null;
+  let earthRadius = null;
+
+  // Eerst alle planeten tekenen
   animatedPlanets.forEach((planet) => {
     const orbitRadius = scaleDistance(planet.distance);
     const planetRadius = scaleRadius(planet.radius);
@@ -243,6 +273,13 @@ function draw() {
     const planetWorldX = worldCenterX + Math.cos(planet.angle) * orbitRadius;
     const planetWorldY = worldCenterY + Math.sin(planet.angle) * orbitRadius;
 
+    // Aarde onthouden voor maan
+    if (planet.name === "Earth") {
+      earthX = planetWorldX;
+      earthY = planetWorldY;
+      earthRadius = planetRadius;
+    }
+
     // Hover detectie
     const dx = worldMouseX - planetWorldX;
     const dy = worldMouseY - planetWorldY;
@@ -257,7 +294,13 @@ function draw() {
     const img = textures[planet.name];
 
     if (img && img.complete) {
-      drawPlanetTexture(img, planetWorldX, planetWorldY, planetRadius);
+      drawPlanetTexture(
+        img,
+        planetWorldX,
+        planetWorldY,
+        planetRadius,
+        planet.rotationAngle,
+      );
       addPlanetShading(planetWorldX, planetWorldY, planetRadius);
     } else {
       ctx.fillStyle = "white";
@@ -277,6 +320,39 @@ function draw() {
       );
     }
   });
+
+  // maan tekenen
+  if (earthX !== null && earthY !== null) {
+    animatedMoons.forEach((moon, index) => {
+      const moonOrbitRadius = earthRadius + 25 + index * 12;
+      const moonRadius = Math.max(2, scaleRadius(moon.radius) * 0.3);
+
+      // baan van de maan
+      ctx.strokeStyle = "rgba(200,200,200,0.15)";
+      ctx.lineWidth = 1 / zoom;
+      ctx.beginPath();
+      ctx.arc(earthX, earthY, moonOrbitRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const moonX = earthX + Math.cos(moon.angle) * moonOrbitRadius;
+      const moonY = earthY + Math.sin(moon.angle) * moonOrbitRadius;
+
+      const dx = worldMouseX - moonX;
+      const dy = worldMouseY - moonY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+
+      if (dist < moonRadius) {
+        ctx.fillStyle = "white";
+        ctx.font = `${14 / zoom}px Arial`;
+        ctx.fillText(moon.name, moonX + 8 / zoom, moonY + 4 / zoom);
+      }
+
+      ctx.fillStyle = "#cfcfcf";
+      ctx.beginPath();
+      ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
 
   canvas.style.cursor = hoveredPlanet ? "pointer" : "default";
 
@@ -349,15 +425,10 @@ window.addEventListener("resize", () => {
   draw();
 });
 
-// hulp van ChatGPT bij het opzetten van de animatielus
 function animate() {
-  // Planetenpositie updaten
   updatePlanets();
-
   sunAngle += 0.0002;
-  // Tekenen
   draw();
-  // Volgende frame aanvragen
   requestAnimationFrame(animate);
 }
 

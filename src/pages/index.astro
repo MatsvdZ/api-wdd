@@ -4,7 +4,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import Controls from "../components/Controls.astro";
 import "../styles/index.css";
 
-
 const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
   headers: {
     Authorization: `Bearer ${import.meta.env.SOLAR_API_KEY}`,
@@ -32,9 +31,26 @@ const planets = data.bodies
     radius: planet.meanRadius,
     distance: planet.semimajorAxis,
     orbitTime: planet.sideralOrbit,
+    sideralRotation: planet.sideralRotation,
     texture: textureMap[planet.englishName],
   }))
   .sort((a, b) => a.distance - b.distance);
+
+const moons = data.bodies
+  .filter(
+    (body) =>
+      body.bodyType === "Moon" &&
+      body.aroundPlanet?.planet?.toLowerCase() === "terre"
+  )
+  .map((moon) => ({
+    name: moon.englishName,
+    aroundPlanet: moon.aroundPlanet?.planet,
+    radius: moon.meanRadius,
+    orbitTime: moon.sideralOrbit,
+  }));
+
+console.log(moons.filter((moon) => moon.name.toLowerCase().includes("moon")));
+console.log(moons.slice(0, 20));
 ---
 
 <BaseLayout title="Our Solar System">
@@ -42,9 +58,10 @@ const planets = data.bodies
 
   <canvas id="solar-system"></canvas>
 
-
-  <script define:vars={{ planets }}>
+  <script define:vars={{ planets, moons }}>
     window.planets = planets;
+    window.moons = moons;
   </script>
+
   <script type="module" src="/canvas.js" is:inline></script>
 </BaseLayout>
