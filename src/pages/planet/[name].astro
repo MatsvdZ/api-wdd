@@ -1,6 +1,8 @@
 --- 
 // @ts-nocheck
+import BaseLayout from "../../layouts/BaseLayout.astro";
 import "../../styles/detail.css";
+import PlanetInfoCard from "../../components/PlanetInfoCard.astro";
 
 // Bron: https://api.le-systeme-solaire.net/en/
 export async function getStaticPaths() {
@@ -54,15 +56,7 @@ const texture = textureMap[planet.englishName];
 const moonCount = planet.moons ? planet.moons.length : 0;
 --- 
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
-    <title>{planet.englishName}</title>
-  </head>
-
-  <body>
-    <main>
+<BaseLayout title={planet.englishName}>
       <a class="back-link" href="/">↩ Back to solar system</a>
 
       <section class="hero">
@@ -77,38 +71,23 @@ const moonCount = planet.moons ? planet.moons.length : 0;
         <div>
           <h1>{planet.englishName}</h1>
           <p class="subtitle">
-            Explore key awesome about {planet.englishName}, including its size, gravity,
+            Explore key awesome facts about {planet.englishName}, including its size, gravity,
             distance from the Sun, orbital period, and more.
           </p>
         </div>
       </section>
 
       <section class="grid">
-        <article class="card">
-          <p class="label">Mean radius</p>
-          <p class="value">{planet.meanRadius} km</p>
-        </article>
-
-        <article class="card">
-          <p class="label">Gravity</p>
-          <p class="value">{planet.gravity} m/s²</p>
-        </article>
-
-        <article class="card">
-          <p class="label">Distance from Sun</p>
-          <p class="value">{planet.semimajorAxis.toLocaleString()} km</p>
-        </article>
-
-        <article class="card">
-          <p class="label">Moons</p>
-          <p class="value">{moonCount}</p>
-        </article>
+        <PlanetInfoCard label="Mean radius" value={`${planet.meanRadius} km`} />
+        <PlanetInfoCard label="Gravity" value={`${planet.gravity} m/s²`} />
+        <PlanetInfoCard label="Distance from Sun" value={`${planet.semimajorAxis.toLocaleString()} km`} />
+        <PlanetInfoCard label="Moons" value={moonCount} />
       </section>
 
       <section class="facts">
         <h2>Extra facts</h2>
         <ul>
-          <li>Orbital {planet.sideralOrbit} days</li>
+          <li>Orbital: {planet.sideralOrbit} days</li>
           <li>Rotation period: {planet.sideralRotation} hours</li>
           <li>Density: {planet.density} g/cm³</li>
           <li>Escape velocity: {planet.escape} m/s</li>
@@ -116,6 +95,4 @@ const moonCount = planet.moons ? planet.moons.length : 0;
           <li>Average temperature: {planet.avgTemp} K</li>
         </ul>
       </section>
-    </main>
-  </body>
-</html>
+</BaseLayout>

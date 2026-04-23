@@ -2,12 +2,6 @@
 /* MARK: DEFAULT STYLING */
 /*************************/
 
-:root {
-  --primary-color: #4CAF50;
-  --secondary-color: #f44336;
-  --bg-color: #f0f0f0;
-}
-
 * {
   box-sizing: border-box;
   margin: 0;
@@ -17,14 +11,6 @@
 
 html body {
   height: 100%;
-}
-
-body {
-  background: var(--bg-color);
-}
-
-h1 {
-  color: pink;
 }
 
 canvas {
@@ -38,7 +24,7 @@ canvas {
   top: 20px;
   left: 20px;
   z-index: 10;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   padding: 10px 14px;
   border-radius: 8px;
   color: white;

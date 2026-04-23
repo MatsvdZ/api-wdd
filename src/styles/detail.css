@@ -9,12 +9,6 @@ html body {
   height: 100%;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
   min-height: 100vh;
   font-family: Arial, Helvetica, sans-serif;
@@ -25,13 +19,11 @@ body {
     #05060a 100%
   );
   color: white;
-}
-
-main {
   width: min(1100px, 92vw);
   margin: 0 auto;
   padding: 2rem 0 2rem;
 }
+
 
 .back-link {
   display: inline-block;

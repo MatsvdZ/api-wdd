@@ -52,7 +52,6 @@ const animatedPlanets = planets.map((planet, index) => ({
 }));
 
 function resizeCanvas() {
-
   // Bron: https://gist.github.com/callumlocke/cc258a193839691f60dd
   const ratio = window.devicePixelRatio || 1;
 
@@ -131,7 +130,7 @@ function addPlanetShading(x, y, radius) {
     radius * 0.2,
     x,
     y,
-    radius
+    radius,
   );
 
   gradient.addColorStop(0, "rgba(255,255,255,0.2)");
@@ -145,15 +144,15 @@ function addPlanetShading(x, y, radius) {
 }
 
 const slider = document.getElementById("speed-slider");
+console.log(slider);
 
 slider.addEventListener("input", (event) => {
-  timeScale = event.target.value / 10;
+  timeScale = event.target.value;
 });
-
 
 function updatePlanets() {
   animatedPlanets.forEach((planet) => {
-    const speed = 1 / planet.orbitTime;
+    const speed = 0.1 / planet.orbitTime;
     planet.angle += speed * timeScale;
   });
 }
@@ -173,7 +172,7 @@ function draw() {
     0,
     dpr * zoom,
     -cameraX * dpr * zoom,
-    -cameraY * dpr * zoom
+    -cameraY * dpr * zoom,
   );
 
   // Zon tekenen
@@ -235,7 +234,7 @@ function draw() {
       ctx.fillText(
         planet.name,
         planetWorldX + 10 / zoom,
-        planetWorldY + 4 / zoom
+        planetWorldY + 4 / zoom,
       );
     }
   });
@@ -291,7 +290,7 @@ canvas.addEventListener(
     cameraX = worldXBeforeZoom - mouseCanvasX / zoom;
     cameraY = worldYBeforeZoom - mouseCanvasY / zoom;
   },
-  { passive: false }
+  { passive: false },
 );
 
 // Hoeken opslaan bij verlaten
@@ -319,7 +318,6 @@ function animate() {
   draw();
   // Volgende frame aanvragen
   requestAnimationFrame(animate);
-  console.log("frame");
 }
 
 // Initialisatie

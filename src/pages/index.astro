@@ -1,6 +1,9 @@
 ---
 // @ts-nocheck
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Controls from "../components/Controls.astro";
 import "../styles/index.css";
+
 
 const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
   headers: {
@@ -34,33 +37,14 @@ const planets = data.bodies
   .sort((a, b) => a.distance - b.distance);
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <link rel="icon" href="/favicon.png" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Our Solar System</title>
-  </head>
-  <body>
-    <div class="controls">
-      <label>
-        Speed:
-        <input type="range" id="speed-slider" min="0" max="50" value="10" />
-      </label>
-    </div>
-    <canvas id="solar-system"></canvas>
+<BaseLayout title="Our Solar System">
+  <Controls />
 
-    <script define:vars={{ planets }}>
-      window.planets = planets;
-    </script>
+  <canvas id="solar-system"></canvas>
 
-<script define:vars={{ planets }}>
-  window.planets = planets;
-</script>
 
-<script type="module" src="/canvas.js"></script>
-<script type="module" src="/localstorage.js"></script>
-  </body>
-</html>
+  <script define:vars={{ planets }}>
+    window.planets = planets;
+  </script>
+  <script type="module" src="/canvas.js" is:inline></script>
+</BaseLayout>
