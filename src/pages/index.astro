@@ -1,17 +1,23 @@
 ---
+// controleer dit bestand niet streng op typefouten
 // @ts-nocheck
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Controls from "../components/Controls.astro";
 import "../styles/index.css";
 
+// Start fetch naar API
 const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
+  // Extra gegevens meesturen met request (API key)
   headers: {
+    // Bearer is het formaat dat de API verwacht
     Authorization: `Bearer ${import.meta.env.SOLAR_API_KEY}`,
   },
 });
 
+// Zet data om naar JSON
 const data = await response.json();
 
+// Object om planeetnamen te koppelen aan afbeeldingpaden, API heeft zelf geen afbeeldingen
 const textureMap = {
   Mercury: "/images/planets/mercury.png",
   Venus: "/images/planets/venus.png",
@@ -23,25 +29,34 @@ const textureMap = {
   Neptune: "/images/planets/neptune.png",
 };
 
-const planets = data.bodies
+// Maken van array voor planets 
+const planets = data.bodies // data.bodies bevat alle hemellichamen uit de API
   .filter((body) => body.isPlanet)
+  // Alleen de velden die ik nodig heb
   .map((planet) => ({
     name: planet.englishName,
+    // BRON: slug is een idee van ChatGPT:
+    // Slug want: URL vriendelijke naam
     slug: planet.englishName.toLowerCase(),
     radius: planet.meanRadius,
-    distance: planet.semimajorAxis,
+    distance: planet.semimajorAxis, // voor orbit radius
     orbitTime: planet.sideralOrbit,
-    sideralRotation: planet.sideralRotation,
-    texture: textureMap[planet.englishName],
+    sideralRotation: planet.sideralRotation, // rotatie tijd van de planeet
+    texture: textureMap[planet.englishName], // Voegt texture toe aan planeetobject
   }))
+  // Sorteer planeten op afstand van de zon, geeft juiste planeet volgorde
   .sort((a, b) => a.distance - b.distance);
 
+// Nieuwe array voor manen
 const moons = data.bodies
+  // filteren om alleen onze maan over te laten
   .filter(
     (body) =>
       body.bodyType === "Moon" &&
-      body.aroundPlanet?.planet?.toLowerCase() === "terre"
+      // Alleen maan die om de aarde draait
+      body.aroundPlanet?.planet?.toLowerCase() === "terre" // API gebruikt Franse ids, terre is Earth
   )
+  // Kleinere versie van maanobject
   .map((moon) => ({
     name: moon.englishName,
     aroundPlanet: moon.aroundPlanet?.planet,
@@ -49,15 +64,18 @@ const moons = data.bodies
     orbitTime: moon.sideralOrbit,
   }));
 
-console.log(moons.filter((moon) => moon.name.toLowerCase().includes("moon")));
-console.log(moons.slice(0, 20));
+// console.log(moons.filter((moon) => moon.name.toLowerCase().includes("moon")));
+// console.log(moons.slice(0, 20));
 ---
 
 <BaseLayout title="Our Solar System">
+  <!-- Controls component -->
   <Controls />
 
   <canvas id="solar-system"></canvas>
 
+  <!-- Astro manier om server-side variabelen beschikbaar te maken in client-side script -->
+   <!-- Geeft dus planets en moons door aan browser -->
   <script define:vars={{ planets, moons }}>
     window.planets = planets;
     window.moons = moons;
