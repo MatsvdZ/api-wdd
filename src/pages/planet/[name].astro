@@ -3,6 +3,8 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import "../../styles/detail.css";
 import PlanetInfoCard from "../../components/PlanetInfoCard.astro";
+import TiltMeter from "../../components/TiltMeter.astro";
+import TemperatureMeter from "../../components/TemperatureMeter.astro";
 
 // 🔥 1. Alle planeten ophalen en routes genereren
 export async function getStaticPaths() {
@@ -44,45 +46,112 @@ const textureMap = {
 
 const texture = textureMap[planet.englishName];
 const moonCount = planet.moons ? planet.moons.length : 0;
+
+const tempK = planet.avgTemp;
+const tempC = Math.round(tempK - 273.15);
+
+const earthTempC = 15;
+const tempDifference = tempC - earthTempC;
+
+let tempComparison = "";
+
+if (tempDifference === 0) {
+  tempComparison = "About the same as Earth";
+} else if (tempDifference > 0) {
+  tempComparison = tempDifference + "°C warmer than Earth";
+} else {
+  tempComparison = Math.abs(tempDifference) + "°C colder than Earth";
+}
+
+const earthGravity = 9.81;
+
+const gravity = planet.gravity;
+const gravityRatio = gravity / earthGravity;
+
+let gravityComparison;
+
+if (gravityRatio === 1) {
+  gravityComparison = "Same as Earth";
+} else if (gravityRatio > 1) {
+  gravityComparison = gravityRatio.toFixed(2) + "x stronger than Earth";
+} else {
+  gravityComparison = gravityRatio.toFixed(2) + "x weaker than Earth";
+}
+
+const yourWeight = 70; // kg 
+const weightOnPlanet = Math.round(yourWeight * gravityRatio);
+
 --- 
 
 <BaseLayout title={planet.englishName}>
-      <a class="back-link" href="/">↩ Back to solar system</a>
+  <main class="planet-detail">
+    <a class="back-link" href="/">← Back to solar system</a>
 
-      <section class="hero">
-        <div class="planet-image-wrapper">
-          {texture ? (
-            <img class="planet-image" src={texture} alt={planet.englishName} />
-          ) : (
-            <div>{planet.englishName}</div>
-          )}
-        </div>
-
-        <div>
+    <section class="planet-hero">
+      <section>
+        <div class="planet-content">
+          <p class="eyebrow">Planet</p>
           <h1>{planet.englishName}</h1>
-          <p class="subtitle">
-            Explore awesome facts about {planet.englishName}, including its size, gravity,
-            distance from the Sun, orbital period, and more.
+
+          <p class="intro">
+            Explore {planet.englishName}, including its size, gravity,
+            distance from the Sun and axial tilt.
           </p>
         </div>
+
+        <div class="planet-visual">
+          {texture && (
+            <img src={texture} alt={planet.englishName} />
+          )}
+        </div>
       </section>
 
-      <section class="grid">
+      <section class="planet-extra">
+        <TiltMeter value={planet.axialTilt} />
+        <TemperatureMeter temp={tempC} comparison={tempComparison} />
+      </section>
+
+      <section class="planet-stats">
         <PlanetInfoCard label="Mean radius" value={`${planet.meanRadius} km`} />
-        <PlanetInfoCard label="Gravity" value={`${planet.gravity} m/s²`} />
-        <PlanetInfoCard label="Distance from Sun" value={`${planet.semimajorAxis.toLocaleString()} km`} />
-        <PlanetInfoCard label="Moons" value={moonCount} />
-      </section>
+        <article class="card gravity-card" id="gravity-card">
+          <p class="label">Gravity</p>
+          <p class="value">{planet.gravity} m/s²</p>
 
-      <section class="facts">
-        <h2>Extra facts</h2>
-        <ul>
-          <li>Orbital: {planet.sideralOrbit} days</li>
-          <li>Rotation period: {planet.sideralRotation} hours</li>
-          <li>Density: {planet.density} g/cm³</li>
-          <li>Escape velocity: {planet.escape} m/s</li>
-          <li>Axial tilt: {planet.axialTilt}°</li>
-          <li>Average temperature: {planet.avgTemp} K</li>
-        </ul>
+          <div class="gravity-extra">
+            <p>{gravityComparison}</p>
+            <p>Your weight: {weightOnPlanet} kg</p>
+          </div>
+        </article>
+        <article class="card distance-card" id="distance-card">
+          <p class="label">Distance from Sun</p>
+          <p class="value">{planet.semimajorAxis.toLocaleString()} km</p>
+
+          <div class="distance-facts" id="distance-facts">
+            <p>🗼 Eiffel Towers: {Math.round((planet.semimajorAxis * 1000) / 330).toLocaleString()}</p>
+            <p>🏙️ Burj Khalifas: {Math.round((planet.semimajorAxis * 1000) / 828).toLocaleString()}</p>
+            <p>🗽 Statues of Liberty: {Math.round((planet.semimajorAxis * 1000) / 93).toLocaleString()}</p>
+          </div>
+        </article>
+        <PlanetInfoCard label="Moons" value={moonCount} />
+        
+        
+      
       </section>
+    </section>
+  </main>
 </BaseLayout>
+<script>
+  const distanceCard = document.getElementById("distance-card");
+
+  distanceCard?.addEventListener("click", () => {
+    distanceCard.classList.toggle("active");
+  });
+
+
+  const gravityCard = document.getElementById("gravity-card");
+
+  gravityCard?.addEventListener("click", () => {
+    gravityCard.classList.toggle("active");
+  });
+
+</script>

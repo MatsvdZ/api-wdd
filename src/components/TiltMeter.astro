@@ -1,0 +1,14 @@
+---
+const { value = 0 } = Astro.props;
+---
+
+<div class="tilt-meter">
+  <p class="tilt-meter-title">Axial tilt</p>
+
+  <div class="tilt-circle">
+    <div class="tilt-line" style={`transform: rotate(${value}deg);`}></div>
+  </div>
+
+  <p class="tilt-value">{value}°</p>
+  <p class="tilt-caption">Rotation axis</p>
+</div>

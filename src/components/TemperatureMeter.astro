@@ -1,0 +1,29 @@
+---
+const { temp = 0, comparison = "" } = Astro.props;
+
+// schaal voor visualisatie
+const min = -200;
+const max = 500;
+
+const percent = Math.min(
+  100,
+  Math.max(0, ((temp - min) / (max - min)) * 100)
+);
+---
+
+<div class="temp-meter">
+
+  <p class="temp-label">Temperature</p>
+
+  <div class="temp-bar">
+    <div
+      class="temp-fill"
+      style={`width: ${percent}%`}
+    ></div>
+  </div>
+
+  <p class="temp-value">{temp}°C</p>
+
+  <p class="temp-comparison">{comparison}</p>
+
+</div>
