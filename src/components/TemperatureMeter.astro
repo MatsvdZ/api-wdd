@@ -2,9 +2,11 @@
 const { temp = 0, comparison = "" } = Astro.props;
 
 // schaal voor visualisatie
+// Temperatuur varieert van -200°C tot (Mercurius), dus gebruiken deze min en max voor de meter
 const min = -200;
 const max = 500;
 
+// Hulp van ChatGPT om percentage te berekenen voor temperatuur, gebaseerd op min en max waarden
 const percent = Math.min(
   100,
   Math.max(0, ((temp - min) / (max - min)) * 100)

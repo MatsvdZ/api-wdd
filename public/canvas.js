@@ -1,8 +1,6 @@
-// @ts-nocheck
 import { loadPlanetAngles, savePlanetAngles } from "./localstorage.js";
 
-console.log(window.moons);
-
+// BRON: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
 // Canvas element ophalen uit index.astro
 const canvas = document.getElementById("solar-system");
 // 2D contect maken
@@ -30,6 +28,7 @@ let zoom = 1;
 // De waarde die wordt aangepast met de speed slider
 let timeScale = 0.1;
 
+// BRON: https://developer.mozilla.org/en-US/docs/Web/API/Window/innerWidth
 // Middelpunt van het canvas, waar de zon is
 // Alle banen worden relatief rondom dit punt getekend
 const worldCenterX = window.innerWidth / 2;
@@ -43,19 +42,21 @@ let mouseY = 0;
 // Hierdoor simpel klikken op planeet zonder opnieuw alles te berekenen
 let hoveredPlanet = null;
 
-// Zonradius, staat niet in planet array, dus losse waarde
+// Zonradius, staat niet in planet array, dus losse vaste waarde
 const sunRadius = 696340; // km
 
-// Afstanden voor radii uit API halen
+// Afstanden voor radius uit API halen
 const distances = planets.map((p) => p.distance);
 const radii = planets.map((p) => p.radius);
 
+// BRON: Idee van ChatGPT om min/max waarden te berekenen voor schaal functies
 // Deze arrays gebruik ik om min/max waarden te berekenen voor scaling
 const minDistance = Math.min(...distances);
 const maxDistance = Math.max(...distances);
 
 // Zon is veel groter dan planeten, dus moet mee in maxRadius
 // Hierdoor werkt de schaal ook op de zon
+// BRON: Idee + uitwerking van ChatGPT
 const allRadii = [...radii, sunRadius];
 const minRadius = Math.min(...radii);
 const maxRadius = Math.max(...allRadii);
@@ -67,6 +68,7 @@ const savedAngles = loadPlanetAngles();
 // Rotatiehoek van de zontexture
 let sunAngle = 0;
 
+// BRON: ChatGPT
 // Nieuwe array op basis van planeten
 // Elke planeet kijgt extra properties die voor animatie nodig zijn
 const animatedPlanets = planets.map((planet, index) => ({
@@ -85,11 +87,11 @@ const animatedMoons = moons.map((moon, index) => ({
 }));
 
 function resizeCanvas() {
-  const ratio = window.devicePixelRatio || 1;
-
   // Canvas heeft een CSS grootte en een pixelgrootte
   // Door devicePixelRatio te gebruiken blijft het canvas scherp op retina schermen
   // BRON: https://gist.github.com/callumlocke/cc258a193839691f60dd
+  const ratio = window.devicePixelRatio || 1;
+
   canvas.width = window.innerWidth * ratio;
   canvas.height = window.innerHeight * ratio;
 
@@ -99,8 +101,8 @@ function resizeCanvas() {
 
 // Camera wordt zo geplaatst dat de zon in het midden van het scherm komt
 function centerOnSun() {
-  cameraX = worldCenterX - window.innerWidth / 2;
-  cameraY = worldCenterY - window.innerHeight / 2;
+  cameraX = 0;
+  cameraY = 0;
 }
 
 // Logaritmische afstandsschaal
@@ -108,7 +110,7 @@ function scaleDistance(distance) {
   const minOrbit = 120;
   const maxOrbit = 2200;
 
-  // BRON: Schaal idee / uitwerking van ChatGPT
+  // BRON: Schaal uitwerking van ChatGPT
   // De echte afstanden tussen planeten zijn groot, dus linear schalen zorgt dat binnenste planeten op elkaar zitten
   // Dus ik gebruik een logaritmische schaal:
   // Grote verschillen blijven zichtbaar, maar blijft bruikbaar op een scherm
@@ -133,6 +135,7 @@ function scaleRadius(radius) {
   return minPlanetPx + t * (maxPlanetPx - minPlanetPx);
 }
 
+// BRON: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
 // Achtergrond tekenen
 function drawBackground() {
   ctx.fillStyle = "black";
@@ -156,6 +159,7 @@ function loadTextures(planetsToLoad) {
   });
 }
 
+// BRON: Hulp van ChatGPT bij het tekenen van een planeet met texture en rotatie
 function drawPlanetTexture(img, x, y, radius, rotation = 0) {
   ctx.save();
 
@@ -176,7 +180,7 @@ function drawPlanetTexture(img, x, y, radius, rotation = 0) {
 }
 
 function addPlanetShading(x, y, radius) {
-  // Een texture kan plat lijken, dus ik voeg een lichte kant en donkere rand toe (met gradient) voor een meer 3D effect
+  // Een texture lijkt plat, dus ik voeg een lichte kant en donkere rand toe voor 3D effect
   const gradient = ctx.createRadialGradient(
     x - radius * 0.3,
     y - radius * 0.3,
@@ -213,6 +217,7 @@ function updatePlanets() {
     const orbitSpeed = 0.1 / planet.orbitTime;
     planet.angle += orbitSpeed * timeScale;
 
+    // BRON: hulp van ChatGPT bij direction uitwerken
     // Rotatie om eigen as
     // sideralRotation kan ook negatief zijn, dat is dan een retrograde rotatie
     if (planet.sideralRotation) {
@@ -336,6 +341,7 @@ function draw() {
       earthRadius = planetRadius;
     }
 
+    // BRON: Hulp van ChatGPT bij hover detectie
     // Hover detectie
     // Afstand tussen muis en planeet middelpunt berekenen
     // Als die kleiner is dan de radius, staat muis op de planeet
@@ -436,6 +442,7 @@ canvas.addEventListener("click", () => {
   }
 });
 
+// BRON: https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event
 // Camera bewegen met pijltjestoetsen
 // Snelheid wordt gedeeld door zoom zodat bewegen natuurlijk aanvoelt
 document.addEventListener("keydown", (event) => {

@@ -21,6 +21,7 @@ export async function getStaticPaths() {
 
   const data = await response.json();
 
+  // Hulp van ChatGPT
   // Alle planeten filteren en routes aanmaken
   return data.bodies
     .filter((body) => body.isPlanet)
@@ -39,7 +40,7 @@ export async function getStaticPaths() {
 // Planeet data ophalen uit props, die door getStaticPaths is gestuurd
 const { planet } = Astro.props;
 
-// Texture mapping
+// Texture mapping tussen planeetnaam en afbeelding, API geeft geen afbeeldingen mee
 const textureMap = {
   Sun: "/images/planets/sun.png",
   Mercury: "/images/planets/mercury.png",
@@ -52,12 +53,15 @@ const textureMap = {
   Neptune: "/images/planets/neptune.png",
 };
 
+// Texture ophalen op basis van naam planeet
 const texture = textureMap[planet.englishName];
 const moonCount = planet.moons ? planet.moons.length : 0;
 
+// Temperatuur vergelijken met aarde, omrekenen van Kelvin naar Celsius
 const tempK = planet.avgTemp;
 const tempC = Math.round(tempK - 273.15);
 
+// Verschil berekenen tussen planeet temperatuur en aarde temperatuur
 const earthTempC = 15;
 const tempDifference = tempC - earthTempC;
 
@@ -76,6 +80,7 @@ const earthGravity = 9.81;
 const gravity = planet.gravity;
 const gravityRatio = gravity / earthGravity;
 
+// Vergelijking van zwaartekracht met aarde
 let gravityComparison;
 
 if (gravityRatio === 1) {
@@ -86,6 +91,7 @@ if (gravityRatio === 1) {
   gravityComparison = gravityRatio.toFixed(2) + "x weaker than Earth";
 }
 
+// Gewicht van persoon op planeet berekenen
 const yourWeight = 70; // kg 
 const weightOnPlanet = Math.round(yourWeight * gravityRatio);
 
@@ -135,6 +141,8 @@ const weightOnPlanet = Math.round(yourWeight * gravityRatio);
           <p class="value">{planet.semimajorAxis.toLocaleString()} km</p>
 
           <div class="distance-facts" id="distance-facts">
+            <!-- BRON: Idee van Cyd om afstanden beter te begrijpen -->
+            <!-- * 1000 omdat afstand van planeten in KM is -->
             <p>🗼 Eiffel Towers: {Math.round((planet.semimajorAxis * 1000) / 330).toLocaleString()}</p>
             <p>🏙️ Burj Khalifas: {Math.round((planet.semimajorAxis * 1000) / 828).toLocaleString()}</p>
             <p>🗽 Statues of Liberty: {Math.round((planet.semimajorAxis * 1000) / 93).toLocaleString()}</p>
@@ -149,6 +157,7 @@ const weightOnPlanet = Math.round(yourWeight * gravityRatio);
   </main>
 </BaseLayout>
 <script>
+  // Toggle voor extra info bij zwaartekracht en afstand, idee van Cyd om pagina interactiever te maken
   const distanceCard = document.getElementById("distance-card");
 
   distanceCard?.addEventListener("click", () => {
