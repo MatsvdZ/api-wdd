@@ -36,7 +36,7 @@
 
 // Haalt opgeslagen planeetposities op uit browser
 export function loadPlanetAngles() {
-  return JSON.parse(localStorage.getItem("planetAngles") || "{}"); // Fallback voor als er nog niks opgeslagen is
+  return JSON.parse(localStorage.getItem("planetAngles") || "{}"); // Fallback voor als er nog niks opgeslagen is, op aanwijzing van ChatGPT
 }
 
 // BRON: workshop Jad

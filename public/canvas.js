@@ -89,6 +89,7 @@ function resizeCanvas() {
 
   // Canvas heeft een CSS grootte en een pixelgrootte
   // Door devicePixelRatio te gebruiken blijft het canvas scherp op retina schermen
+  // BRON: https://gist.github.com/callumlocke/cc258a193839691f60dd
   canvas.width = window.innerWidth * ratio;
   canvas.height = window.innerHeight * ratio;
 
@@ -473,12 +474,13 @@ canvas.addEventListener(
   { passive: false },
 );
 
-// Planeet posities opslaan wanneer je de pagina verlaat
+// Planeet posities opslaan wanneer pagina verlaten wordt
 window.addEventListener("beforeunload", () => {
   savePlanetAngles(animatedPlanets);
 });
 
 // Ook periodiek opslaan, extra hulpje
+// BRON: Idee van ChatGPT, zodat posities ook regelmatig opgeslagen worden tijdens het bekijken, niet alleen bij verlaten pagina + https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Basic_animations#moving-the-canvas-camera
 setInterval(() => {
   savePlanetAngles(animatedPlanets);
 }, 5000);
@@ -501,6 +503,7 @@ function animate() {
 
   // RequestAnimationFrame maakt vloeiende animatielus
   // Loopt synchroon met refresh rate van het scherm
+  // BRON: https://developer.mozilla.org/en-US/docs/Web/API/Window/requestAnimationFrame + uitleg ChatGPT
   requestAnimationFrame(animate);
 }
 

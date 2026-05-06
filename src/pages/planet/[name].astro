@@ -1,34 +1,42 @@
 --- 
 // @ts-nocheck
+// Alle imports voor layout en styles
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import "../../styles/detail.css";
+
+// Componenten
 import PlanetInfoCard from "../../components/PlanetInfoCard.astro";
 import TiltMeter from "../../components/TiltMeter.astro";
 import TemperatureMeter from "../../components/TemperatureMeter.astro";
 
-// 🔥 1. Alle planeten ophalen en routes genereren
+// Alle planeten ophalen en voor elke planeer een pagina genereren
 export async function getStaticPaths() {
+  // API fetch
   const response = await fetch("https://api.le-systeme-solaire.net/rest/bodies/", {
     headers: {
+      // API key uit .env bestand, via import.meta.env
       Authorization: `Bearer ${import.meta.env.SOLAR_API_KEY}`,
     },
   });
 
   const data = await response.json();
 
+  // Alle planeten filteren en routes aanmaken
   return data.bodies
     .filter((body) => body.isPlanet)
     .map((planet) => ({
       params: {
+        // URL vriendelijke naam, dus kleine letters bijvoorbeeld /earth
         name: planet.englishName.toLowerCase(),
       },
       props: {
-        planet, // 👈 stuur hele object door
+        // Stuurt hele object door
+        planet, 
       },
     }));
 }
 
-// 🔥 2. Geen fetch meer nodig!
+// Planeet data ophalen uit props, die door getStaticPaths is gestuurd
 const { planet } = Astro.props;
 
 // Texture mapping
